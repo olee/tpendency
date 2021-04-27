@@ -1,0 +1,25 @@
+{
+  "name": "tpendency",
+  "version": "0.0.1",
+  "description": "Async dependency injector for JavaScript & Typescript with full type-safety",
+  "author": "Björn Zeutzheim",
+  "license": "MIT",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "clean": "shx rm -Rf lib",
+    "tsc": "tsc -p tsconfig.json",
+    "tsc-cjs": "tsc -p tsconfig-cjs.json",
+    "build": "npm run clean && npm run tsc && npm run tsc-cjs",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "lib/",
+    "README.md"
+  ],
+  "devDependencies": {
+    "shx": "^0.3.3",
+    "typescript": "^4.2.4"
+  }
+}

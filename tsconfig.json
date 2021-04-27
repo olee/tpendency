@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+
+    // Build options
+    "sourceMap": true, /* Generates corresponding '.map' file. */
+    "declaration": true, /* Generates corresponding '.d.ts' file. */
+    "declarationMap": false,
+    "removeComments": true,
+    "declarationDir": "lib",
+    "outDir": "lib/esm",
+
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "lib": [
+      "ESNext",
+      "DOM"
+    ]
+  },
+  "include": [
+    "./src"
+  ]
+}
