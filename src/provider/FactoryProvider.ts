@@ -1,18 +1,16 @@
-import type { IProviderSync, TupleToTokens } from '../types.js';
+import type { IProvider, TupleToTokens } from '../types.js';
 
 /**
  * Provider that gets values by invoking a factory function.
  */
-export class FactoryProvider<T, TDeps extends readonly any[]> implements IProviderSync<T> {
+export class FactoryProvider<T, TDeps extends readonly any[]> implements IProvider<T> {
 
-	public dependencyTokens: readonly [...TupleToTokens<TDeps>];
+	constructor(
+		private readonly _factory: (...deps: TDeps) => T,
+		private readonly _dependencyTokens: readonly [...TupleToTokens<TDeps>]
+	) { }
 
-	private _factory: (...deps: TDeps) => T;
-
-	constructor(factory: (...deps: TDeps) => T, dependencyTokens: readonly [...TupleToTokens<TDeps>]) {
-		this.dependencyTokens = dependencyTokens;
-		this._factory = factory;
-	}
+	public getDependencyTokens() { return this._dependencyTokens; }
 
 	public get(dependencies: TDeps): Promise<T> {
 		return Promise.resolve(

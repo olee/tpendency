@@ -1,20 +1,10 @@
-import type { IToken, IBinding, IProvider, IProviderAsync, IProviderSync } from './types.js';
+import type { IToken, IBinding, IProvider } from './types.js';
 
-import { NoBoundTokenError, CyclicDependencyError } from './errors.js';
+import { UnboundTokenError, CyclicDependencyError } from './errors.js';
 import { bindValue } from './binding.js';
 
 export interface IInjector {
     get<T>(token: IToken<T>): Promise<T>;
-}
-
-/** Checks, if a provider is of type IProviderSync */
-export function isSyncProvider(provider: IProvider<any>): provider is IProviderSync<any> {
-    return Array.isArray((provider as IProviderSync<any>).dependencyTokens);
-}
-
-/** Checks, if a provider is of type IProviderAsync */
-export function isAsyncProvider(provider: IProvider<any>): provider is IProviderAsync<any> {
-    return typeof (provider as IProviderAsync<any>).getDependencyTokens === 'function';
 }
 
 /**
@@ -24,7 +14,7 @@ export default class Injector implements IInjector {
 
     private _parent?: IInjector;
 
-    private readonly _bindings = new Map<IToken<any>, IBinding<any>>();
+    private readonly _providers = new Map<IToken<any>, IProvider<any>>();
 
     private readonly _cache = new Map<IToken<any>, Promise<any>>();
 
@@ -50,7 +40,7 @@ export default class Injector implements IInjector {
 
     /** Returns an array of all non-lazy tokens know to this injector */
     public get tokens() {
-        return Array.from(this._bindings.keys()).filter(x => !x.isLazy);
+        return Array.from(this._providers.keys()).filter(x => !x.isLazy);
     }
 
     /**
@@ -77,7 +67,7 @@ export default class Injector implements IInjector {
         if (this._cache.has(binding.token)) {
             throw new Error('Token has already been resolved once and cannot be overwritten');
         }
-        this._bindings.set(binding.token, binding);
+        this._providers.set(binding.token, binding.provider);
     }
 
     /**
@@ -96,10 +86,14 @@ export default class Injector implements IInjector {
      * 
      * @param token Token to resolve
      */
-    public get<T>(token: IToken<T>, indexLog: Set<IToken<any>> = new Set(), tokenChain: IToken<any>[] = []): Promise<T> {
+    public get<T>(token: IToken<T>, tokenChain: IToken<any>[] = []): Promise<T> {
+        // Detect cyclic dependencies issues
+        if (tokenChain.includes(token)) {
+            throw new CyclicDependencyError(tokenChain);
+        }
         let promise = this._cache.get(token);
         if (!promise) {
-            promise = this._get(token, indexLog, tokenChain).then(result => {
+            promise = this._get(token, tokenChain).then(result => {
                 // Add to instance cache
                 this._tokenInstanceMap.set(token, result);
                 this._instanceTokenMap.set(result, token);
@@ -147,61 +141,32 @@ export default class Injector implements IInjector {
         throw this.get(token);
     }
 
-    private _get<T>(token: IToken<T>, indexLog: Set<IToken<any>>, tokenChain: IToken<any>[] = []): Promise<T> {
-        const binding = this._bindings.get(token);
-        if (binding) {
-            return this._resolveFromProvider(binding, indexLog, tokenChain);
-        } else {
-            return this._resolveFromParent(token);
-        }
-    }
-
     /**
-     * Resolve the token through the parent.
-     * If no parent is set, a NoBoundTokenError error will be thrown
+     * Resolve the dependency through this injector or the parent.
+     * If the tokens is neither bound in this injector or any parent, an UnboundTokenError error will be thrown
      */
-    private _resolveFromParent<T>(token: IToken<T>): Promise<T> {
-        if (this._parent) {
+    private _get<T>(token: IToken<T>, tokenChain: IToken<any>[] = []): Promise<T> {
+        const provider = this._providers.get(token);
+        if (provider) {
+            return this._provide(token, provider, tokenChain);
+        } else if (this._parent) {
             return this._parent.get(token);
         } else {
-            throw new NoBoundTokenError(token);
+            throw new UnboundTokenError(token);
         }
     }
 
-    private _resolveFromProvider<T>(binding: IBinding<T>, indexLog: Set<IToken<any>>, tokenChain: IToken<any>[]): Promise<T> {
-        const { token, provider } = binding;
-        tokenChain.push(token);
+    private async _provide<T>(token: IToken<T>, provider: IProvider<T>, tokenChain: IToken<any>[]): Promise<T> {
+        // Get dependency tokens
+        const dependencyTokens = await provider.getDependencyTokens();
 
-        // detect cyclic dependencies issues
-        if (indexLog.has(token)) {
-            throw new CyclicDependencyError(tokenChain);
-        }
-        indexLog.add(token);
+        // Await all dependencies
+        const dependencies = !dependencyTokens ? [] : await Promise.all(
+            dependencyTokens.map(depToken => this.get(depToken, [...tokenChain, token]))
+        );
 
-        // check for async dependencies
-        if (isAsyncProvider(provider)) {
-            return provider.getDependencyTokens().then(dependencyTokens => {
-                // get dependencies
-                const dependencyPromises = dependencyTokens?.map(depToken => {
-                    return this.get(depToken, new Set(indexLog), tokenChain.slice());
-                });
-
-                // await dependencies and provide result
-                return !dependencyPromises ?
-                    provider.get([]) :
-                    Promise.all(dependencyPromises).then(dependencies => provider.get(dependencies));
-            });
-        } else {
-            // get dependencies
-            const dependencyPromises = provider.dependencyTokens?.map(depToken => {
-                return this.get(depToken, new Set(indexLog), tokenChain.slice());
-            });
-
-            // await dependencies and provide result
-            return !dependencyPromises ?
-                provider.get([]) :
-                Promise.all(dependencyPromises).then(dependencies => provider.get(dependencies));
-        }
+        // provide value
+        return provider.get(dependencies);
     }
 
 }

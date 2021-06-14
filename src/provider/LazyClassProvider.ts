@@ -1,4 +1,4 @@
-import type { ClassType, IProviderAsync, TupleToTokens, InjectedTokens } from '../types.js';
+import type { ClassType, IProvider, TupleToTokens, InjectedTokens } from '../types.js';
 import { ClassDependencyTokensSymbol } from '../types.js';
 
 export type LazyClassProviderFactory<CLS extends ClassType<any, TDeps>, TDeps extends readonly any[]> =
@@ -7,12 +7,12 @@ export type LazyClassProviderFactory<CLS extends ClassType<any, TDeps>, TDeps ex
 /**
  * Provider that gets values by constructing an instance of a class.
  */
-export class LazyClassProvider<T, TDeps extends readonly any[], CLS extends ClassType<T, TDeps>> implements IProviderAsync<T, TDeps> {
+export class LazyClassProvider<T, TDeps extends readonly any[], CLS extends ClassType<T, TDeps>> implements IProvider<T, TDeps> {
 
 	private _factoryResult?: Promise<CLS & InjectedTokens<TDeps>>;
 
 	constructor(
-		private _factory: LazyClassProviderFactory<CLS, TDeps>
+		private readonly _factory: LazyClassProviderFactory<CLS, TDeps>
 	) {
 	}
 

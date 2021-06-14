@@ -11,6 +11,7 @@
     "clean": "shx rm -Rf lib",
     "tsc": "tsc -p tsconfig.json",
     "tsc-cjs": "tsc -p tsconfig-cjs.json",
+    "test": "jest",
     "build": "npm run clean && npm run tsc && npm run tsc-cjs",
     "prepublishOnly": "npm run build"
   },
@@ -19,7 +20,11 @@
     "README.md"
   ],
   "devDependencies": {
+    "@types/jest": "^26.0.23",
+    "jest": "^27.0.4",
+    "jest-ts-webcompat-resolver": "^1.0.0",
     "shx": "^0.3.3",
+    "ts-jest": "^27.0.3",
     "typescript": "^4.2.4"
   }
 }

@@ -16,8 +16,8 @@ export class CyclicDependencyError extends Error {
 /**
  * Error thrown when attempting to call Injector#get(token) where token is not bound on the injector.
  */
-export class NoBoundTokenError extends Error {
-    public name = 'NoBoundTokenError';
+export class UnboundTokenError extends Error {
+    public name = 'UnboundTokenError';
 
     constructor(token: IToken<any>) {
         super();

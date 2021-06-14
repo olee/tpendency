@@ -1,15 +1,17 @@
-import type { ClassType, IProviderSync, TupleToTokens } from '../types.js';
+import type { ClassType, IProvider, TupleToTokens } from '../types.js';
 
 /**
  * Provider that asynchronously loads a class implementation and constructs it
  */
-export class AsyncClassProvider<T extends { $onInjectorCreate?: any; }, TDeps extends readonly any[]> implements IProviderSync<T> {
+export class AsyncClassProvider<T extends { $onInjectorCreate?: any; }, TDeps extends readonly any[]> implements IProvider<T> {
 
 	constructor(
 		private readonly _factory: () => Promise<ClassType<T, TDeps> | { default: ClassType<T, TDeps>; }>,
-		public readonly dependencyTokens: readonly [...TupleToTokens<TDeps>]
+		private readonly dependencyTokens: readonly [...TupleToTokens<TDeps>]
 	) {
 	}
+
+	public getDependencyTokens() { return this.dependencyTokens; }
 
 	public get(dependencies: TDeps): Promise<T> {
 		return this._factory().then(async (_module: any) => {

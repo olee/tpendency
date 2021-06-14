@@ -11,22 +11,13 @@ export interface IToken<T> {
     readonly surrogate?: T;
 }
 
-export interface IProviderBase<T, TDeps extends readonly any[] = readonly any[]> {
-    get(dependencies: TDeps): Promise<T>;
-}
-
-export interface IProviderAsync<T, TDeps extends readonly any[] = readonly any[]> extends IProviderBase<T, TDeps> {
-    getDependencyTokens(): Promise<TupleToTokens<TDeps>>;
-}
-
-export interface IProviderSync<T, TDeps extends readonly any[] = readonly any[]> extends IProviderBase<T, TDeps> {
-    dependencyTokens: TupleToTokens<TDeps>;
-}
-
 /**
  * A provider is recipe for building a value that may have dependencies.
  */
-export type IProvider<T, TDeps extends readonly any[] = readonly any[]> = IProviderSync<T, TDeps> | IProviderAsync<T, TDeps>;
+export interface IProvider<T, TDeps extends readonly any[] = readonly any[]> {
+    get(dependencies: TDeps): Promise<T>;
+    getDependencyTokens(): TupleToTokens<TDeps> | Promise<TupleToTokens<TDeps>>;
+}
 
 export interface IBinding<T> {
     token: IToken<T>;
