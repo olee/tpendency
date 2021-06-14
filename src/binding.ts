@@ -10,7 +10,7 @@ export function createBinding<T>(token: IToken<T>, provider: IProvider<T>): IBin
 }
 
 /**
- * Bind the token to a value.
+ * Binds the token to a constant value.
  *
  * @param token Token to bind to
  * @param value Value to bind to the token
@@ -20,17 +20,17 @@ export function bindValue<T>(token: IToken<T>, value: T): IBinding<T> {
 }
 
 /**
- * Bind the token to a value.
+ * Binds the token to the value of another token.
  *
  * @param token Token to bind to
- * @param otherToken Other token which value to bind the token to
+ * @param otherToken Other token which value to binds the token to
  */
 export function bindToToken<T, TOther extends T>(token: IToken<T>, otherToken: IToken<TOther>) {
 	return createBinding(token, new FactoryProvider(res => res, [otherToken]));
 }
 
 /**
- * Bind the token to a factory.
+ * Binds the token to a factory function.
  *
  * @param token Token to bind to
  * @param factory Factory function that returns the value for the token
@@ -53,7 +53,7 @@ export function bindFactory<T, TDeps extends readonly any[]>(
 }
 
 /**
- * Bind the token to an asynchronous factory.
+ * Binds the token to an asynchronous factory function.
  *
  * @param token Token to bind to
  * @param factory Factory function that returns the Promise for the value for the token
@@ -76,7 +76,8 @@ export function bindAsyncFactory<T, TDeps extends readonly any[]>(
 }
 
 /**
- * Bind the token to a class which will be constructed when providing it
+ * Binds the token to a class which will be constructed when the dependency is provided.
+ * The dependencies of the class will be passed into the constructor automatically.
  *
  * @param token Token to bind to
  * @param Class Class with either no dependencies or which has been decorated with `@Inject`
@@ -88,7 +89,8 @@ export function bindAsyncFactory<T, TDeps extends readonly any[]>(
 export function bindClass<T>(token: IToken<T>, Class: ClassType<T, []> | ClassTypeWithTokens<T>): IBinding<T>;
 
 /**
- * Bind the token to a class which will be constructed when providing it
+ * Binds the token to a class which will be constructed when the dependency is provided.
+ * The dependencies of the class will be passed into the constructor automatically.
  *
  * @param token Token to bind to
  * @param Class Class to construct
@@ -116,7 +118,8 @@ export function bindClass<T, TDeps extends any[]>(
 }
 
 /**
- * Bind the token to an async factory, which returns a class which will be constructed when providing it
+ * Binds the token to an asynchronous function which should return a class type.
+ * The class is then instantiated in the same way as with `ClassProvider`.
  *
  * @param token Token to bind to
  * @param factory Factory which returns a promise to a class type
@@ -141,7 +144,7 @@ export function bindAsyncClass<T, TDeps extends any[], CLS extends new (...deps:
 }
 
 /**
- * Bind the token to an async factory which constructs a class.
+ * Binds the token to an async factory which constructs a class.
  *
  * @param token Token to bind to
  * @param factory Factory which returns either:
@@ -173,7 +176,7 @@ class UnprovidedBinding<T> {
 	}
 
 	/**
-	 * Bind the token to a value.
+	 * Binds the token to a value.
 	 * 
 	 * @param value Value to bind to the token
 	 */
@@ -182,7 +185,7 @@ class UnprovidedBinding<T> {
 	}
 
 	// /**
-	//  * Bind the token to the value of another token.
+	//  * Binds the token to the value of another token.
 	//  * 
 	//  * @param token Other token to bind to the token to
 	//  */
@@ -194,7 +197,7 @@ class UnprovidedBinding<T> {
 	// }
 
 	/**
-	 * Bind the token to a factory.
+	 * Binds the token to a factory.
 	 * 
 	 * @param factory Factory function that returns the value for the token
 	 * @param [dependencyTokens] Tokens to inject into the factory function
@@ -204,7 +207,7 @@ class UnprovidedBinding<T> {
 	}
 
 	/**
-	 * Bind the token to an asynchronous factory.
+	 * Binds the token to an asynchronous factory.
 	 * 
 	 * @param factory Factory function that returns the Promise for the value for the token
 	 * @param dependencyTokens Tokens to inject into the factory function
@@ -214,7 +217,7 @@ class UnprovidedBinding<T> {
 	}
 
 	/**
-	 * Bind the token to a class which will be constructed when providing it
+	 * Binds the token to a class which will be constructed when providing it
 	 *
 	 * @param token Token to bind to
 	 * @param Class Class with either no dependencies or which has been decorated with `@Inject`
@@ -222,7 +225,7 @@ class UnprovidedBinding<T> {
 	public toClass(Class: ClassType<T, []> | ClassTypeWithTokens<T>): IBinding<T>;
 
 	/**
-	 * Bind the token to a class which will be constructed when providing it
+	 * Binds the token to a class which will be constructed when providing it
 	 *
 	 * @param Class Class to construct
 	 * @param dependencyTokens Tokens to inject into the constructor
@@ -234,17 +237,20 @@ class UnprovidedBinding<T> {
 	}
 
 	/**
-	 * Bind the token to an async factory, which returns a class which will be constructed when providing it
+	 * Binds the token to an async factory, which returns a class which will be constructed when providing it
 	 *
 	 * @param factory Factory which returns a promise to a class type
 	 * @param dependencyTokens Tokens to inject into the constructor
 	 */
-	public toAsyncClass<TDeps extends any[]>(factory: () => Promise<ClassType<T, TDeps>>, dependencyTokens: readonly [...TupleToTokens<TDeps>]): IBinding<T> {
+	public toAsyncClass<TDeps extends any[], CLS extends new (...deps: TDeps) => T>(
+		factory: () => Promise<CLS | { default: CLS; }>,
+		dependencyTokens: readonly [...TupleToTokens<TDeps>]
+	): IBinding<T> {
 		return createBinding(this.token, new AsyncClassProvider(factory, dependencyTokens));
 	}
 
 	/**
-	 * Bind the token to an async factory which constructs a class.
+	 * Binds the token to an async factory which constructs a class.
 	 *
 	 * @param factory Factory which returns either:
 	 * - Class with no dependencies

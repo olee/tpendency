@@ -1,4 +1,4 @@
-import { Injector, createToken, bind, ILazy, CyclicDependencyError } from '../src';
+import { Injector, createToken, bind, ILazy, CyclicDependencyError, bindValue, bindFactory } from '../src';
 
 class CyclicErrorA {
     constructor(
@@ -16,14 +16,20 @@ class CyclicFixA {
     constructor(
         public readonly b: CyclicFixB,
     ) { }
+
+    public foo() {
+        // console.log("foo");
+    }
 }
 
 class CyclicFixB {
-    public a?: CyclicFixA;
     constructor(
-        lazyA: ILazy<CyclicFixA>,
-    ) {
-        lazyA.get().then(x => this.a = x);
+        private readonly lazyA: ILazy<CyclicFixA>,
+    ) { }
+
+    public async foo() {
+        const a = await this.lazyA.get();
+        a.foo();
     }
 }
 
@@ -42,12 +48,12 @@ const bindings = [
 
 test('Cyclic dependency error', async () => {
     const injector = new Injector(bindings);
-    await expect(injector.get(CyclicErrorAToken)).rejects.toThrow(CyclicDependencyError);
+    await expect(injector.get(CyclicErrorBToken)).rejects.toThrow(CyclicDependencyError);
 });
 
 test('Cyclic dependency fix', async () => {
     const injector = new Injector(bindings);
-    const a = await injector.get(CyclicFixAToken);
-    expect(a).toBeInstanceOf(CyclicFixA);
-    expect(a.b).toBeInstanceOf(CyclicFixB);
+    const b = await injector.get(CyclicFixBToken);
+    expect(b).toBeInstanceOf(CyclicFixB);
+    expect(b.foo()).resolves.toBeUndefined();
 });
