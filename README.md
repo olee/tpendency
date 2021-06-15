@@ -5,7 +5,7 @@
 Tpendency is an asynchronous dependency injection library for TypeScript which
 focuses on type-safety.
 
-It was heavily inspired by [tpendency](https://github.com/matthewjh/Syringe) and
+It was heavily inspired by [syringe.ts](https://github.com/matthewjh/Syringe) and
 extends it with better typings and more features like React-Suspense support
 etc.
 

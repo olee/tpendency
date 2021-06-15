@@ -1,4 +1,4 @@
-import { createToken, ClassDependencyTokensSymbol, bindClass, bindLazyClass } from '.';
+import { createToken, ClassDependencyTokensSymbol, bindClass, bindLazyClass } from '../src';
 
 const Dep1Token = createToken<Dep1>('dep1');
 const Dep2Token = createToken<Dep2>('dep2');

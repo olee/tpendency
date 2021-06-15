@@ -1,7 +1,7 @@
 {
   "name": "tpendency",
-  "version": "0.0.1",
-  "description": "Async dependency injector for JavaScript & Typescript with full type-safety",
+  "version": "0.0.3",
+  "description": "Async dependency injector for JavaScript & TypeScript with full type-safety",
   "author": "Björn Zeutzheim",
   "license": "MIT",
   "main": "./lib/cjs/index.js",
@@ -13,7 +13,8 @@
     "tsc-cjs": "tsc -p tsconfig-cjs.json",
     "test": "jest",
     "build": "npm run clean && npm run tsc && npm run tsc-cjs",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run test",
+    "prepare": "npm run build"
   },
   "files": [
     "lib/",
