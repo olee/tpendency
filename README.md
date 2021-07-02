@@ -13,7 +13,9 @@ etc.
 
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
-- [TypeScript Support](#typescript+support)
+- [Terminology](#terminology)
+- [Best Practices](#best-practices)
+- [TypeScript Support](#typescript-support)
 - [Bindings](#bindings)
 - [Lazy Dependencies](#lazy-dependencies)
 - [Injector Nesting](#injector-nesting)
@@ -54,12 +56,12 @@ console.log(await injector.get(TwoToken)); // logs 4
 
 ## Terminology
 
-### Tokens
+### Token
 
 A token is an object which serves as a unique and type-safe identifier for a single dependency.
 Tokens are created with the `createToken<T>()` function and they work similar to javascript symbols.
 
-### Providers
+### Provider
 
 A provider can specify a set of dependencies as tokens and when invoked, will receive their resolved values and
 then use these to create the return value for the token it is bound to.
@@ -74,7 +76,7 @@ The basic providers are:
 - Asynchronous factory
 - Asynchronous class provider
 
-### Bindings
+### Binding
 
 A binding is a mapping from a token to a provider which will tell the injector which provider to use for a token.
 
@@ -107,6 +109,61 @@ required parameters are provided correctly.
 
 Because this library uses TypeScript Tuple Types to provide type-safety for
 tokens and bindings, you need at least TypeScript 4.0 to use this library.
+
+## Best Practices
+
+### Use single location for all tokens
+
+For easy use it is recommended to have all required tokens exported from within a single file like `tokens.ts` at some easy-to-reach location like the root of the source tree.
+This will make it easy to reference tokens from anywhere within the project (eg. `import * as Tokens from 'src/tokens';`)
+
+Of course, splitting the tokens into multiple modules should still be done if it makes sense.
+
+### No other dependencies in tokens file
+
+Tokens should only be exported from files which have no other dependencies except the ones necessary to create tokens.
+This is especially important for typescript imports.
+
+The following code for example will create a dependency from the tokens file to `MyService.ts` which will cause issues when code splitting should be used and it can also create hard to debug issues with circular dependencies.
+
+```ts
+import { createToken } from 'tpendency';
+import { IMyService } from './MyService';
+
+export const MyServiceToken = createToken<IMyService>('MyService');
+```
+
+Instead use a type-only import for types which are used to create tokens:
+
+```ts
+import type { IMyService } from './MyService';
+```
+
+### Code Splitting
+
+tpendency makes it really easy to add code splitting to a project by using asynchronous factories or class providers:
+
+```ts
+import { bindAsyncClass, IBinding } from 'tpendency';
+
+import * as Tokens from './tokens';
+
+const bindings: IBinding<any>[] = [
+  bindAsyncClass(Tokens.ServiceAToken,
+    () => import(/* webpackChunkName: "ServiceA" */ './services/ServiceA'), 
+    [Tokens.SomeDependencyToken]
+  ),
+  
+  bindAsyncClass(Tokens.ServiceBToken,
+    // Hint: If the class is not exported as default, use .then() to grab it!
+    () => import(/* webpackChunkName: "ServiceB" */ './services/ServiceB').then(m => m.ServiceB),
+    [Tokens.ServiceAToken]
+  ),
+];
+export default bindings;
+```
+
+The example above is additionally using webpack's `webpackChunkName` directive to make sure the service and its dependencies are put into a properly named chunk :+1:
 
 ## Bindings
 
