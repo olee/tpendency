@@ -52,6 +52,32 @@ const injector = new Injector([
 console.log(await injector.get(TwoToken)); // logs 4
 ```
 
+## Terminology
+
+### Tokens
+
+A token is an object which serves as a unique and type-safe identifier for a single dependency.
+Tokens are created with the `createToken<T>()` function and they work similar to javascript symbols.
+
+### Providers
+
+A provider can specify a set of dependencies as tokens and when invoked, will receive their resolved values and
+then use these to create the return value for the token it is bound to.
+
+The return value can be a constant value with no dependencies at all, a class type which will be constructed with
+the dependencies or just some kind of factory function which will receive the dependencies as arguments.
+
+The basic providers are:
+- Constant value provider
+- Factory function provider
+- Class provider
+- Asynchronous factory
+- Asynchronous class provider
+
+### Bindings
+
+A binding is a mapping from a token to a provider which will tell the injector which provider to use for a token.
+
 ## TypeScript Support
 
 In order to provide type-safety, this library does not use strings or symbols as
