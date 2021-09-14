@@ -9,6 +9,7 @@ export interface IToken<T> {
     readonly isLazy?: true;
     /** This property is required to make typescript check if two token types are compatible to each other */
     readonly surrogate?: T;
+    toString(): string;
 }
 
 /**

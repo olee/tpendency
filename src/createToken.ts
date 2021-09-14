@@ -7,10 +7,8 @@ const TokenSymbol = Symbol('token');
 let createTokenIdx = 0;
 
 /** */
-function _createToken<T>(debugName?: string, isLazy?: true): IToken<T> {
-    if (!debugName) {
-        debugName = `Token-${createTokenIdx++}`;
-    }
+function _createToken<T>(name?: string, isLazy?: true): IToken<T> {
+    const debugName = name || `Token-${createTokenIdx++}`;
     let lazyToken: IToken<ILazy<T>>;
     return Object.freeze({
         [TokenSymbol]: true,
@@ -28,6 +26,9 @@ function _createToken<T>(debugName?: string, isLazy?: true): IToken<T> {
         },
         toString() {
             return debugName;
+        },
+        toJSON() {
+            return `[Token ${debugName}]`;
         }
     });
 }
