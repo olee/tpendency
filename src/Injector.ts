@@ -114,24 +114,44 @@ export default class Injector implements IInjector {
         return promise;
     }
 
-    public getTokenForInstance<T>(instance: T): IToken<T> | undefined {
-        return this._instanceTokenMap.get(instance);
+    /** 
+     * This function uses {@link get} to resolve multiple dependencies at the same time using {@link Promise.all}
+     */
+    public all<T extends any[]>(tokens: readonly [...{ [k in keyof T]: IToken<T[k]> }]): Promise<T> {
+        return Promise.all(tokens.map(token => this.get(token)) as T);
     }
 
+    /** 
+     * Try to return the token for a resolved value.
+     */
+    public getTokenForValue<T>(value: T): IToken<T> | undefined {
+        return this._instanceTokenMap.get(value);
+    }
+
+    /**
+     * Returns true, if the token has already been resolved
+     */
     public isInstantiated<T>(token: IToken<T>) {
         return this._tokenInstanceMap.has(token);
     }
 
+    /**
+     * If the binding for a token threw an error, this function will return this error
+     */
     public getError(token: IToken<any>) {
         return this._tokenErrorMap.get(token);
     }
 
-    /** Returns the value for the token if it was already resolved, otherwise returns undefined */
+    /** 
+     * Returns the value for the token if it was already resolved, otherwise returns undefined 
+     */
     public getIfInstantiated<T>(token: IToken<T>): T | undefined {
         return this._tokenInstanceMap.get(token);
     }
 
-    /** React-Suspense compatible resolver */
+    /** 
+     * React-Suspense compatible resolver 
+     */
     public getSuspense<T>(token: IToken<T>): T {
         if (this._tokenInstanceMap.has(token)) {
             return this._tokenInstanceMap.get(token);
@@ -139,6 +159,20 @@ export default class Injector implements IInjector {
             throw this._tokenErrorMap.get(token);
         }
         throw this.get(token);
+    }
+
+    /** 
+     * Same as {@link getSuspense}, but can resolve multiple dependencies at the same time (see {@link all})
+     */
+    public allSuspense<T extends any[]>(tokens: readonly [...{ [k in keyof T]: IToken<T[k]> }]): T {
+        if (tokens.every(token => this._tokenInstanceMap.has(token))) {
+            return tokens.map(token => this._tokenInstanceMap.get(token)) as T;
+        }
+        const errorToken = tokens.find(token => this._tokenErrorMap.has(token));
+        if (errorToken) {
+            throw this._tokenErrorMap.get(errorToken);
+        }
+        throw this.all(tokens);
     }
 
     /**

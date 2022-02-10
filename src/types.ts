@@ -20,7 +20,7 @@ export interface IProvider<T, TDeps extends readonly any[] = readonly any[]> {
     getDependencyTokens(): TupleToTokens<TDeps> | Promise<TupleToTokens<TDeps>>;
 }
 
-export interface IBinding<T> {
+export interface IBinding<T = unknown> {
     token: IToken<T>;
     provider: IProvider<T>;
 }

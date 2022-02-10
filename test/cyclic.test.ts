@@ -1,4 +1,4 @@
-import { Injector, createToken, bind, ILazy, CyclicDependencyError, bindValue, bindFactory } from '../src';
+import { Injector, createToken, bind, ILazy, CyclicDependencyError } from '../src';
 
 class CyclicErrorA {
     constructor(
