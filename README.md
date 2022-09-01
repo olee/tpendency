@@ -29,7 +29,7 @@ manager (npm, yarn & co.)
 
 To start using tpendency, you will have to create a set of tokens with
 `createToken<T>()` first, which will return a unique symbol for your dependency.
-Then you can create an `Injector` with a list of bindings, which will which
+Then you can create an `Injector` with a list of bindings, which will
 connect tokens to various providers, which tell the injector on how to
 instantiate the values for their respective token.
 
@@ -51,7 +51,7 @@ const injector = new Injector([
   ]),
 ]);
 
-console.log(await injector.get(TwoToken)); // logs 4
+console.log(await injector.get(SumToken)); // logs 4
 ```
 
 ## Terminology
