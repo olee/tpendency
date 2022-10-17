@@ -1,12 +1,12 @@
-import { Injector, createToken, bind } from '../src';
+import { Injector, createToken, bind, bindClass, bindValue, bindAsyncClass, createBinding, ClassProvider } from '../src';
 import { ILogger, Logger } from './Logger';
 
-const HelloToken = createToken<string>();
-const WorldToken = createToken<string>();
-const HelloWorldToken = createToken<string>();
+const HelloToken = createToken<string>('Hello');
+const WorldToken = createToken<string>('World');
+const HelloWorldToken = createToken<string>('HelloWorld');
 
-const LoggerPrefixToken = createToken<string>();
-const LoggerToken = createToken<ILogger>();
+const LoggerPrefixToken = createToken<string>('LoggerPrefix');
+const LoggerToken = createToken<ILogger>('Logger');
 
 test('bind.toValue', async () => {
     const injector = new Injector([
@@ -61,10 +61,39 @@ test('bind.toClass', async () => {
     expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });
 
+test('bindClass', async () => {
+    const injector = new Injector([
+        bindValue(LoggerPrefixToken, 'LOG'),
+        bindClass(LoggerToken, Logger, [
+            LoggerPrefixToken
+        ]),
+    ]);
+    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+});
+
+test('create ClassProvider binding', async () => {
+    const injector = new Injector([
+        bindValue(LoggerPrefixToken, 'LOG'),
+        createBinding(LoggerToken, new ClassProvider(Logger, [LoggerPrefixToken])),
+    ]);
+    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+});
+
 test('bind.toAsyncClass', async () => {
     const injector = new Injector([
         bind(LoggerPrefixToken).toValue('LOG'),
         bind(LoggerToken).toAsyncClass(
+            () => import('./Logger').then(m => m.Logger),
+            [LoggerPrefixToken]
+        ),
+    ]);
+    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+});
+
+test('bindAsyncClass', async () => {
+    const injector = new Injector([
+        bindValue(LoggerPrefixToken, 'LOG'),
+        bindAsyncClass(LoggerToken,
             () => import('./Logger').then(m => m.Logger),
             [LoggerPrefixToken]
         ),

@@ -1,6 +1,6 @@
 import type { IToken, IBinding, TupleToTokens, ClassType, IProvider, ClassTypeWithTokens } from './types.js';
 
-import { AsyncClassProvider, AsyncFactoryProvider, ClassProvider, FactoryProvider, LazyClassProvider, LazyClassProviderFactory, ValueProvider } from './provider/index.js';
+import { AsyncClassProvider, AsyncFactoryProvider, ClassProvider, FactoryProvider, LazyClassProvider, LazyClassProviderFactory, ProvidableClass, ValueProvider } from './provider/index.js';
 
 /**
  * Creates a binding from a token and a provider
@@ -80,20 +80,20 @@ export function bindAsyncFactory<T, TDeps extends readonly any[]>(
  * The dependencies of the class will be passed into the constructor automatically.
  *
  * @param token Token to bind to
- * @param Class Class with either no dependencies or which has been decorated with `@Inject`
+ * @param classType Class with either no dependencies or which has been decorated with `@Inject`
  *
  * @example
  * bindClass(TargetToken, MyClassWithoutDependencies);
  * bindClass(TargetToken, MyClassWithInjectDecorator);
  */
-export function bindClass<T>(token: IToken<T>, Class: ClassType<T, []> | ClassTypeWithTokens<T>): IBinding<T>;
+export function bindClass<T extends {}>(token: IToken<T>, classType: ClassType<T & ProvidableClass, []> | ClassTypeWithTokens<T>): IBinding<T>;
 
 /**
  * Binds the token to a class which will be constructed when the dependency is provided.
  * The dependencies of the class will be passed into the constructor automatically.
  *
  * @param token Token to bind to
- * @param Class Class to construct
+ * @param classType Class to construct
  * @param dependencyTokens Tokens to inject into the constructor
  *
  * @example
@@ -106,15 +106,15 @@ export function bindClass<T>(token: IToken<T>, Class: ClassType<T, []> | ClassTy
  *     [Dep1Token, Dep2Token]
  * );
  */
-export function bindClass<T, TDeps extends any[]>(
-	token: IToken<T>, clazz: ClassType<T, TDeps>, dependencyTokens: readonly [...TupleToTokens<TDeps>]
+export function bindClass<T extends {}, TDeps extends any[]>(
+	token: IToken<T>, classType: ClassType<T & ProvidableClass, TDeps>, dependencyTokens: readonly [...TupleToTokens<TDeps>]
 ): IBinding<T>;
 
 /** */
-export function bindClass<T, TDeps extends any[]>(
-	token: IToken<T>, clazz: any, dependencyTokens?: readonly [...TupleToTokens<TDeps>]
+export function bindClass<T extends {}, TDeps extends any[]>(
+	token: IToken<T>, classType: any, dependencyTokens?: readonly [...TupleToTokens<TDeps>]
 ): IBinding<T> {
-	return createBinding(token, new ClassProvider(clazz, dependencyTokens!));
+	return createBinding(token, new ClassProvider(classType, dependencyTokens));
 }
 
 /**
@@ -135,7 +135,7 @@ export function bindClass<T, TDeps extends any[]>(
  *     [Dep1Token, Dep2Token]
  * );
  */
-export function bindAsyncClass<T, TDeps extends any[], CLS extends new (...deps: TDeps) => T>(
+export function bindAsyncClass<T extends {}, TDeps extends any[], CLS extends new (...deps: TDeps) => T>(
 	token: IToken<T>,
 	factory: () => Promise<CLS | { default: CLS; }>,
 	dependencyTokens: readonly [...TupleToTokens<TDeps>]
@@ -160,7 +160,10 @@ export function bindAsyncClass<T, TDeps extends any[], CLS extends new (...deps:
  *     constructor(public dep1: Dep1, public dep2: Dep2) { }
  * }
  */
-export function bindLazyClass<T, TDeps extends readonly any[], CLS extends ClassType<T, TDeps>>(token: IToken<T>, factory: LazyClassProviderFactory<CLS, TDeps>): IBinding<T> {
+export function bindLazyClass<T extends {}, TDeps extends readonly any[], CLS extends ClassType<T & ProvidableClass, TDeps>>(
+	token: IToken<T>,
+	factory: LazyClassProviderFactory<CLS, TDeps>
+): IBinding<T> {
 	return createBinding(token, new LazyClassProvider(factory));
 }
 
@@ -222,7 +225,7 @@ class UnprovidedBinding<T> {
 	 * @param token Token to bind to
 	 * @param Class Class with either no dependencies or which has been decorated with `@Inject`
 	 */
-	public toClass(Class: ClassType<T, []> | ClassTypeWithTokens<T>): IBinding<T>;
+	public toClass(Class: ClassType<T & ProvidableClass, []> | ClassTypeWithTokens<T>): IBinding<T>;
 
 	/**
 	 * Binds the token to a class which will be constructed when providing it
@@ -230,10 +233,10 @@ class UnprovidedBinding<T> {
 	 * @param Class Class to construct
 	 * @param dependencyTokens Tokens to inject into the constructor
 	 */
-	public toClass<TDeps extends any[]>(Class: ClassType<T, TDeps>, dependencyTokens: readonly [...TupleToTokens<TDeps>]): IBinding<T>;
+	public toClass<TDeps extends any[]>(Class: ClassType<T & ProvidableClass, TDeps>, dependencyTokens: readonly [...TupleToTokens<TDeps>]): IBinding<T>;
 
-	public toClass<TDeps extends any[]>(Class: ClassTypeWithTokens<T, TDeps>, dependencyTokens?: readonly [...TupleToTokens<TDeps>]): IBinding<T> {
-		return createBinding(this.token, new ClassProvider(Class, dependencyTokens as any));
+	public toClass<TDeps extends any[]>(Class: ClassTypeWithTokens<T & ProvidableClass, TDeps>, dependencyTokens?: readonly [...TupleToTokens<TDeps>]): IBinding<T> {
+		return createBinding(this.token, new ClassProvider<any, any, any>(Class, dependencyTokens as any));
 	}
 
 	/**
@@ -242,11 +245,11 @@ class UnprovidedBinding<T> {
 	 * @param factory Factory which returns a promise to a class type
 	 * @param dependencyTokens Tokens to inject into the constructor
 	 */
-	public toAsyncClass<TDeps extends any[], CLS extends new (...deps: TDeps) => T>(
+	public toAsyncClass<TDeps extends any[], CLS extends ClassType<T & ProvidableClass, TDeps>>(
 		factory: () => Promise<CLS | { default: CLS; }>,
 		dependencyTokens: readonly [...TupleToTokens<TDeps>]
 	): IBinding<T> {
-		return createBinding(this.token, new AsyncClassProvider(factory, dependencyTokens));
+		return createBinding(this.token, new AsyncClassProvider<any, any>(factory, dependencyTokens));
 	}
 
 	/**
@@ -265,7 +268,7 @@ class UnprovidedBinding<T> {
 	 *     constructor(public dep1: Dep1, public dep2: Dep2) { }
 	 * }
 	 */
-	public toLazyAsyncClass<TDeps extends any[], CLS extends ClassType<T, TDeps>>(factory: LazyClassProviderFactory<CLS, TDeps>): IBinding<T> {
+	public toLazyAsyncClass<TDeps extends any[], CLS extends ClassType<T & ProvidableClass, TDeps>>(factory: LazyClassProviderFactory<CLS, TDeps>): IBinding<T> {
 		return createBinding(this.token, new LazyClassProvider(factory));
 	}
 }

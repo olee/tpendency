@@ -1,6 +1,6 @@
 {
   "name": "tpendency",
-  "version": "0.0.6",
+  "version": "1.0.4",
   "description": "Async dependency injector for JavaScript & TypeScript with full type-safety",
   "author": "Björn Zeutzheim",
   "license": "MIT",
@@ -26,6 +26,6 @@
     "jest-ts-webcompat-resolver": "^1.0.0",
     "shx": "^0.3.4",
     "ts-jest": "^27.1.3",
-    "typescript": "^4.5.5"
+    "typescript": "^4.8.4"
   }
 }

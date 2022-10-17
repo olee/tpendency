@@ -1,15 +1,19 @@
 import type { ClassType, IProvider, TupleToTokens, InjectedTokens } from '../types.js';
 import { ClassDependencyTokensSymbol } from '../types.js';
 
+interface ClassWithOnInjectorCreate { $onInjectorCreate(): void | Promise<unknown>; };
+
+export type ProvidableClass = Partial<ClassWithOnInjectorCreate>;
+
 /**
  * Provider that gets values by constructing an instance of a class.
  */
-export class ClassProvider<T extends { $onInjectorCreate?: any; }, TDeps extends readonly any[], CLS extends ClassType<T, TDeps>> implements IProvider<T, TDeps> {
+export class ClassProvider<T extends {}, TDeps extends readonly any[], CLS extends ClassType<T & ProvidableClass, TDeps>> implements IProvider<T, TDeps> {
 
 	private readonly _dependencyTokens: TupleToTokens<TDeps>;
 
 	constructor(
-		private readonly _class: CLS extends new () => any ? CLS : CLS & InjectedTokens<TDeps>,
+		private readonly _class: CLS | CLS & InjectedTokens<TDeps>,
 		dependencyTokens: CLS extends InjectedTokens<TDeps> ? undefined : TupleToTokens<TDeps>
 	) {
 		if (!_class) {
@@ -23,7 +27,7 @@ export class ClassProvider<T extends { $onInjectorCreate?: any; }, TDeps extends
 			this._dependencyTokens = (_class as InjectedTokens<TDeps>)[ClassDependencyTokensSymbol]!;
 		}
 	}
-	
+
 	public getDependencyTokens() { return this._dependencyTokens; }
 
 	public async get(dependencies: TDeps): Promise<T> {

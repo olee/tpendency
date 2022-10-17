@@ -11,10 +11,12 @@
         "titleBar.activeForeground": "#e7e7e7",
         "titleBar.inactiveBackground": "#3178c699",
         "titleBar.inactiveForeground": "#e7e7e799",
-        "sash.hoverBorder": "#5592d5"
+        "sash.hoverBorder": "#5592d5",
+        "commandCenter.border": "#e7e7e799"
     },
     "peacock.color": "#3178c6",
     "cSpell.words": [
+        "clazz",
         "tpendency"
     ]
 }

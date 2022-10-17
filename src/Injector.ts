@@ -1,10 +1,18 @@
 import type { IToken, IBinding, IProvider } from './types.js';
-
 import { UnboundTokenError, CyclicDependencyError } from './errors.js';
 import { bindValue } from './binding.js';
+import { EventEmitter } from './EventEmitter.js';
 
 export interface IInjector {
     get<T>(token: IToken<T>): Promise<T>;
+}
+
+export interface InjectorEvents {
+    instantiate: <T>(token: IToken<T>, obj: T, dependencyTokens: readonly IToken<unknown>[], dependencies: readonly unknown[]) => void;
+    instantiateCollectDeps: (token: IToken<unknown>, dependencyTokens: readonly IToken<unknown>[], dependencies: readonly unknown[]) => void;
+    instantiateCollectDepTokens: (token: IToken<unknown>, dependencyTokens: readonly IToken<unknown>[]) => void;
+    instantiateCyclicError: (token: IToken<unknown>, tokenChain: readonly IToken<unknown>[]) => void;
+    instantiateError: (token: IToken<unknown>, dependencyTokens: readonly IToken<unknown>[], error: unknown) => void;
 }
 
 /**
@@ -24,8 +32,7 @@ export default class Injector implements IInjector {
 
     private readonly _instanceTokenMap = new Map<any, IToken<any>>();
 
-    // TODO-3: Replace with event subscriber
-    public onInstantiate?: <T>(token: IToken<T>, obj: T) => void;
+    private readonly eventEmitter = new EventEmitter<InjectorEvents>();
 
     /**
      * @param bindings Bindings to initialize this injector with
@@ -37,6 +44,8 @@ export default class Injector implements IInjector {
             this.registerBindings(bindings);
         }
     }
+
+    public readonly on = this.eventEmitter.on.bind(this.eventEmitter);
 
     /** Returns an array of all non-lazy tokens know to this injector */
     public get tokens() {
@@ -89,6 +98,7 @@ export default class Injector implements IInjector {
     public get<T>(token: IToken<T>, tokenChain: IToken<any>[] = []): Promise<T> {
         // Detect cyclic dependencies issues
         if (tokenChain.includes(token)) {
+            this.eventEmitter.emit('instantiateCyclicError', token, tokenChain);
             throw new CyclicDependencyError(tokenChain);
         }
         let promise = this._cache.get(token);
@@ -97,18 +107,19 @@ export default class Injector implements IInjector {
                 // Add to instance cache
                 this._tokenInstanceMap.set(token, result);
                 this._instanceTokenMap.set(result, token);
-                this.onInstantiate?.(token, result);
                 return result;
             }).catch(error => {
                 this._tokenErrorMap.set(token, error);
+                const depTokensPromise = this._providers.get(token)?.getDependencyTokens();
+                if (!depTokensPromise || Array.isArray(depTokensPromise)) {
+                    this.eventEmitter.emit('instantiateError', token, [], error);
+                } else {
+                    Promise.resolve(depTokensPromise).then((depTokens) => {
+                        this.eventEmitter.emit('instantiateError', token, depTokens, error);
+                    });
+                }
                 throw error;
             });
-            // TODO: Some kind of after-create callback might be useful?
-            // promise.then(result => {
-            //     if (typeof result === 'object' && typeof result.$onAfterInjectorCreate === 'function') {
-            //         return result.$onAfterInjectorCreate();
-            //     }
-            // });
             this._cache.set(token, promise);
         }
         return promise;
@@ -192,15 +203,23 @@ export default class Injector implements IInjector {
 
     private async _provide<T>(token: IToken<T>, provider: IProvider<T>, tokenChain: IToken<any>[]): Promise<T> {
         // Get dependency tokens
-        const dependencyTokens = await provider.getDependencyTokens();
+        const dependencyTokens = (await provider.getDependencyTokens()) || [];
+
+        this.eventEmitter.emit('instantiateCollectDepTokens', token, dependencyTokens);
 
         // Await all dependencies
-        const dependencies = !dependencyTokens ? [] : await Promise.all(
+        const dependencies = dependencyTokens.length === 0 ? [] : await Promise.all(
             dependencyTokens.map(depToken => this.get(depToken, [...tokenChain, token]))
         );
 
+        this.eventEmitter.emit('instantiateCollectDeps', token, dependencyTokens, dependencies);
+
         // provide value
-        return provider.get(dependencies);
+        const result = await provider.get(dependencies);
+
+        this.eventEmitter.emit('instantiate', token, result, dependencyTokens, dependencies);
+
+        return result;
     }
 
 }
