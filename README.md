@@ -9,6 +9,11 @@ It was heavily inspired by [syringe.ts](https://github.com/matthewjh/Syringe) an
 extends it with better typings and more features like React-Suspense support
 etc.
 
+## Additional resources
+
+- Video with an [introduction to tependency](https://www.youtube.com/watch?v=d1VSjqS7BP0)
+- Demo application [using `tpendency`](https://github.com/dirico/tpendency-workshop) (from the Video)
+
 ## Table of Contents
 
 - [Installation](#installation)
