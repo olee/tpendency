@@ -1,4 +1,4 @@
-import { IToken } from './types.js';
+import type { IToken } from './types.ts';
 
 /**
  * Error thrown a dependency cycle is detected at runtime.

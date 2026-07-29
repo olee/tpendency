@@ -1,4 +1,4 @@
-import { ClassType, TupleToTokens } from './types.js';
+import type { ClassType, TupleToTokens } from './types.ts';
 
 export const ClassDependencyTokensSymbol = Symbol('dependencyTokens');
 

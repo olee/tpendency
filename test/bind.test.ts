@@ -1,5 +1,6 @@
-import { Injector, createToken, bind, bindClass, bindValue, bindAsyncClass, createBinding, ClassProvider } from '../src';
-import { ILogger, Logger } from './Logger';
+import { ClassProvider, Injector, bind, bindAsyncClass, bindClass, bindValue, createBinding, createToken } from '../src/index.ts';
+import type { ILogger } from './Logger.ts';
+import { Logger } from './Logger.ts';
 
 const HelloToken = createToken<string>('Hello');
 const WorldToken = createToken<string>('World');
@@ -12,7 +13,7 @@ test('bind.toValue', async () => {
     const injector = new Injector([
         bind(HelloToken).toValue('hello'),
     ]);
-    expect(injector.get(HelloToken)).resolves.toEqual('hello');
+    await expect(injector.get(HelloToken)).resolves.toEqual('hello');
 });
 
 test('bind.toToken', async () => {
@@ -20,7 +21,7 @@ test('bind.toToken', async () => {
         bind(HelloToken).toValue('hello'),
         bind(WorldToken).toToken(HelloToken),
     ]);
-    expect(injector.get(WorldToken)).resolves.toEqual('hello');
+    await expect(injector.get(WorldToken)).resolves.toEqual('hello');
 });
 
 test('bind.toFactory', async () => {
@@ -32,7 +33,7 @@ test('bind.toFactory', async () => {
             [HelloToken, WorldToken]
         ),
     ]);
-    expect(injector.get(HelloWorldToken)).resolves.toEqual('hello world!');
+    await expect(injector.get(HelloWorldToken)).resolves.toEqual('hello world!');
 });
 
 test('bind.toAsyncFactory', async () => {
@@ -48,7 +49,7 @@ test('bind.toAsyncFactory', async () => {
             [HelloToken, WorldToken]
         ),
     ]);
-    expect(injector.get(HelloWorldToken)).resolves.toEqual('hello world!');
+    await expect(injector.get(HelloWorldToken)).resolves.toEqual('hello world!');
 });
 
 test('bind.toClass', async () => {
@@ -58,7 +59,7 @@ test('bind.toClass', async () => {
             LoggerPrefixToken
         ]),
     ]);
-    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+    await expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });
 
 test('bindClass', async () => {
@@ -68,7 +69,7 @@ test('bindClass', async () => {
             LoggerPrefixToken
         ]),
     ]);
-    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+    await expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });
 
 test('create ClassProvider binding', async () => {
@@ -76,27 +77,27 @@ test('create ClassProvider binding', async () => {
         bindValue(LoggerPrefixToken, 'LOG'),
         createBinding(LoggerToken, new ClassProvider(Logger, [LoggerPrefixToken])),
     ]);
-    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+    await expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });
 
 test('bind.toAsyncClass', async () => {
     const injector = new Injector([
         bind(LoggerPrefixToken).toValue('LOG'),
         bind(LoggerToken).toAsyncClass(
-            () => import('./Logger').then(m => m.Logger),
+            () => import('./Logger.ts').then(m => m.Logger),
             [LoggerPrefixToken]
         ),
     ]);
-    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+    await expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });
 
 test('bindAsyncClass', async () => {
     const injector = new Injector([
         bindValue(LoggerPrefixToken, 'LOG'),
         bindAsyncClass(LoggerToken,
-            () => import('./Logger').then(m => m.Logger),
+            () => import('./Logger.ts').then(m => m.Logger),
             [LoggerPrefixToken]
         ),
     ]);
-    expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
+    await expect(injector.get(LoggerToken)).resolves.toBeInstanceOf(Logger);
 });

@@ -1,13 +1,15 @@
-import type { IProvider } from '../types.js';
+import type { IProvider } from '../types.ts';
 
 /**
  * Provider that gets values by returning a constant value. 
  */
 export class ValueProvider<T> implements IProvider<T> {
 
-	constructor(
-		private readonly _value: T
-	) { }
+	private readonly _value: T;
+
+	constructor(_value: T) {
+		this._value = _value;
+	}
 
 	public getDependencyTokens() { return []; }
 

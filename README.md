@@ -112,9 +112,6 @@ bind(PlusTenToken).toFactory((x: number) => x + 10, [StringToken]);
 Bindings for classes and factories will also ensure, that the tokens for all
 required parameters are provided correctly.
 
-Because this library uses TypeScript Tuple Types to provide type-safety for
-tokens and bindings, you need at least TypeScript 4.0 to use this library.
-
 ## Best Practices
 
 ### Use single location for all tokens

@@ -1,6 +1,7 @@
-import type { IToken, IBinding, TupleToTokens, ClassType, IProvider, ClassTypeWithTokens } from './types.js';
+import type { ClassType, ClassTypeWithTokens, IBinding, IProvider, IToken, TupleToTokens } from './types.ts';
 
-import { AsyncClassProvider, AsyncFactoryProvider, ClassProvider, FactoryProvider, LazyClassProvider, LazyClassProviderFactory, ProvidableClass, ValueProvider } from './provider/index.js';
+import type { LazyClassProviderFactory, ProvidableClass } from './provider/index.ts';
+import { AsyncClassProvider, AsyncFactoryProvider, ClassProvider, FactoryProvider, LazyClassProvider, ValueProvider } from './provider/index.ts';
 
 /**
  * Creates a binding from a token and a provider
@@ -157,7 +158,7 @@ export function bindAsyncClass<T extends {}, TDeps extends any[], CLS extends ne
  * // requires class decorated like this:
  * class _MyClassWithStaticDeps {
  *     static [ClassDependencyTokensSymbol] = [Dep1Token, Dep2Token] as const;
- *     constructor(public dep1: Dep1, public dep2: Dep2) { }
+ *     constructor(dep1: Dep1, dep2: Dep2) { }
  * }
  */
 export function bindLazyClass<T extends {}, TDeps extends readonly any[], CLS extends ClassType<T & ProvidableClass, TDeps>>(
@@ -172,10 +173,13 @@ export function bindLazyClass<T extends {}, TDeps extends readonly any[], CLS ex
  */
 class UnprovidedBinding<T> {
 
+	private readonly token: IToken<T>;
+
 	/**
 	 * @param token Token to bind to
 	 */
-	constructor(private readonly token: IToken<T>) {
+	constructor(_token: IToken<T>) {
+		this.token = _token;
 	}
 
 	/**
@@ -187,17 +191,14 @@ class UnprovidedBinding<T> {
 		return createBinding(this.token, new ValueProvider(value));
 	}
 
-	// /**
-	//  * Binds the token to the value of another token.
-	//  * 
-	//  * @param token Other token to bind to the token to
-	//  */
+	/**
+	 * Binds the token to the value of another token.
+	 * 
+	 * @param token Other token to bind to the token to
+	 */
 	public toToken<TOther extends T>(token: IToken<TOther>) {
 		return createBinding(this.token, new FactoryProvider(res => res, [token]));
 	}
-	// bindToToken<T, TOther extends T>(token: IToken<T>, otherToken: IToken<TOther>) {
-	// 	return createBinding(token, new FactoryProvider(res => res, [otherToken]));
-	// }
 
 	/**
 	 * Binds the token to a factory.
@@ -265,7 +266,7 @@ class UnprovidedBinding<T> {
 	 * // requires class decorated like this:
 	 * class _MyClassWithStaticDeps {
 	 *     static [ClassDependencyTokensSymbol] = [Dep1Token, Dep2Token] as const;
-	 *     constructor(public dep1: Dep1, public dep2: Dep2) { }
+	 *     constructor(dep1: Dep1, dep2: Dep2) { }
 	 * }
 	 */
 	public toLazyAsyncClass<TDeps extends any[], CLS extends ClassType<T & ProvidableClass, TDeps>>(factory: LazyClassProviderFactory<CLS, TDeps>): IBinding<T> {

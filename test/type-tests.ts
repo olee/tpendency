@@ -1,4 +1,4 @@
-import { createToken, ClassDependencyTokensSymbol, bindClass, bindLazyClass } from '../src';
+import { createToken, ClassDependencyTokensSymbol, bindClass, bindLazyClass } from '../src/index.ts';
 
 const Dep1Token = createToken<Dep1>('dep1');
 const Dep2Token = createToken<Dep2>('dep2');
@@ -13,12 +13,22 @@ class Dep2 {
 }
 
 class Store {
-    constructor(public dep1: Dep1, public dep2: Dep2) { }
+    public dep1: Dep1;
+    public dep2: Dep2;
+    constructor(dep1: Dep1, dep2: Dep2) {
+        this.dep1 = dep1;
+        this.dep2 = dep2;
+    }
 }
 
 class StoreWithInject {
     static [ClassDependencyTokensSymbol] = [Dep1Token, Dep2Token] as const;
-    constructor(public dep1: Dep1, public dep2: Dep2) { }
+    public dep1: Dep1;
+    public dep2: Dep2;
+    constructor(dep1: Dep1, dep2: Dep2) {
+        this.dep1 = dep1;
+        this.dep2 = dep2;
+    }
 }
 
 bindClass(Dep1Token, Dep1);

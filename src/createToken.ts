@@ -1,6 +1,6 @@
-import { addDevtoolsFormatter } from './devtoolsFormatters.js';
+import { addDevtoolsFormatter } from './devtoolsFormatters.ts';
 
-import { IToken, ILazy } from './types.js';
+import type { IToken, ILazy } from './types.ts';
 
 const TokenSymbol = Symbol('token');
 

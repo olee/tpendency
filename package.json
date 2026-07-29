@@ -1,31 +1,63 @@
 {
   "name": "tpendency",
-  "version": "1.0.4",
+  "version": "2.0.0-rc.1",
   "description": "Async dependency injector for JavaScript & TypeScript with full type-safety",
   "author": "Björn Zeutzheim",
   "license": "MIT",
-  "main": "./lib/cjs/index.js",
+  "homepage": "https://github.com/olee/tpendency#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/olee/tpendency.git"
+  },
+  "bugs": {
+    "url": "https://github.com/olee/tpendency/issues"
+  },
+  "type": "module",
+  "main": "./lib/cjs/index.cjs",
   "module": "./lib/esm/index.js",
   "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "sideEffects": false,
   "scripts": {
     "clean": "shx rm -Rf lib",
-    "tsc": "tsc -p tsconfig.json",
-    "tsc-cjs": "tsc -p tsconfig-cjs.json",
-    "test": "jest",
-    "build": "npm run clean && npm run tsc && npm run tsc-cjs",
-    "prepublishOnly": "npm run test",
-    "prepare": "npm run build"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "shx rm -Rf lib && tsc -p tsconfig.build.json && tsup",
+    "prepublishOnly": "pnpm run typecheck && pnpm run test && pnpm run build",
+    "prepare": "pnpm run build"
   },
   "files": [
     "lib/",
-    "README.md"
+    "src/",
+    "LICENSE",
+    "pnpm-lock.yaml",
+    "README.md",
+    "tsconfig.build.json",
+    "tsconfig.json",
+    "tsup.config.ts"
+  ],
+  "keywords": [
+    "dependency-injection",
+    "di",
+    "typescript",
+    "async",
+    "type-safe"
   ],
   "devDependencies": {
-    "@types/jest": "^27.4.0",
-    "jest": "^27.5.1",
-    "jest-ts-webcompat-resolver": "^1.0.0",
+    "@types/node": "^22.20.1",
     "shx": "^0.3.4",
-    "ts-jest": "^27.1.3",
-    "typescript": "^4.8.4"
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
