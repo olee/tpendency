@@ -29,7 +29,7 @@ export interface ClassType<TInstance = any, TParams extends readonly any[] = rea
     new(...args: TParams): TInstance;
 }
 
-export type TupleToTokens<T extends readonly any[]> = { [i in keyof T]: IToken<T[i]> };
+export type TupleToTokens<T extends readonly any[]> = { readonly [i in keyof T]: IToken<T[i]> };
 
 export const ClassDependencyTokensSymbol = Symbol('dependencyTokens');
 
@@ -40,3 +40,5 @@ export interface ClassTypeWithTokens<T = any, TParams extends readonly any[] = r
 export interface InjectedTokens<TParams extends readonly any[] = readonly any[]> {
     readonly [ClassDependencyTokensSymbol]: TupleToTokens<TParams>;
 }
+
+export type ClassTokens<T extends ClassType> = TupleToTokens<ConstructorParameters<T>>;
