@@ -30,6 +30,10 @@ etc.
 Simply install from npm via `tpendency` package with your preferred package
 manager (npm, yarn & co.)
 
+### Agent Skill
+
+You can add [SKILL.md](./skills/tpendency/SKILL.md) to your project to make it easier to use tpendency in your project when working with AI agents.
+
 ## Basic Usage
 
 To start using tpendency, you will have to create a set of tokens with
