@@ -1,7 +1,7 @@
-import type { IToken, IBinding, IProvider } from './types.js';
-import { UnboundTokenError, CyclicDependencyError } from './errors.js';
-import { bindValue } from './binding.js';
-import { EventEmitter } from './EventEmitter.js';
+import { bindValue } from './binding.ts';
+import { CyclicDependencyError, UnboundTokenError } from './errors.ts';
+import { EventEmitter } from './EventEmitter.ts';
+import type { IBinding, IProvider, IToken } from './types.ts';
 
 export interface IInjector {
     get<T>(token: IToken<T>): Promise<T>;
@@ -18,19 +18,19 @@ export interface InjectorEvents {
 /**
  * An Injector resolves tokens to values via bindings.
  */
-export default class Injector implements IInjector {
+export default class Injector implements IInjector, AsyncDisposable {
 
     private _parent?: IInjector;
 
-    private readonly _providers = new Map<IToken<any>, IProvider<any>>();
+    private readonly _providers = new Map<IToken<unknown>, IProvider<unknown>>();
 
-    private readonly _cache = new Map<IToken<any>, Promise<any>>();
+    private readonly _resolveCache = new Map<IToken<unknown>, Promise<unknown>>();
 
-    private readonly _tokenInstanceMap = new Map<IToken<any>, any>();
+    private readonly _tokenInstanceMap = new Map<IToken<unknown>, unknown>();
 
-    private readonly _tokenErrorMap = new Map<IToken<any>, any>();
+    private readonly _tokenErrorMap = new Map<IToken<unknown>, unknown>();
 
-    private readonly _instanceTokenMap = new Map<any, IToken<any>>();
+    private readonly _instanceTokenMap = new Map<unknown, IToken<unknown>>();
 
     private readonly eventEmitter = new EventEmitter<InjectorEvents>();
 
@@ -43,6 +43,35 @@ export default class Injector implements IInjector {
         if (bindings) {
             this.registerBindings(bindings);
         }
+    }
+
+    public async [Symbol.asyncDispose]() {
+        await this.reset(true);
+    }
+
+    /**
+     * Resets the injector to its initial state, leaving behind only bindings.
+     * 
+     * @param disposeValues If true, all instantiated values will be disposed if they are disposable
+     */
+    public async reset(disposeValues: boolean = true) {
+        if (disposeValues) {
+            for (const value of this.getAllInstantiated()) {
+                if (typeof value === 'object' && value !== null) {
+                    if (Symbol.asyncDispose in value && typeof value[Symbol.asyncDispose] === 'function') {
+                        await (value[Symbol.asyncDispose] as () => Promise<void>)();
+                    } else if (Symbol.dispose in value && typeof value[Symbol.dispose] === 'function') {
+                        (value[Symbol.dispose] as () => void)();
+                    } else if ('dispose' in value && typeof value.dispose === 'function') {
+                        (value.dispose as () => void)();
+                    }
+                }
+            }
+        }
+        this._tokenInstanceMap.clear();
+        this._tokenErrorMap.clear();
+        this._instanceTokenMap.clear();
+        this._resolveCache.clear();
     }
 
     public readonly on = this.eventEmitter.on.bind(this.eventEmitter);
@@ -73,7 +102,7 @@ export default class Injector implements IInjector {
     }
 
     private _registerBinding(binding: IBinding<any>) {
-        if (this._cache.has(binding.token)) {
+        if (this._resolveCache.has(binding.token)) {
             throw new Error('Token has already been resolved once and cannot be overwritten');
         }
         this._providers.set(binding.token, binding.provider);
@@ -101,7 +130,7 @@ export default class Injector implements IInjector {
             this.eventEmitter.emit('instantiateCyclicError', token, tokenChain);
             throw new CyclicDependencyError(tokenChain);
         }
-        let promise = this._cache.get(token);
+        let promise = this._resolveCache.get(token) as Promise<T> | undefined;
         if (!promise) {
             promise = this._get(token, tokenChain).then(result => {
                 // Add to instance cache
@@ -120,7 +149,7 @@ export default class Injector implements IInjector {
                 }
                 throw error;
             });
-            this._cache.set(token, promise);
+            this._resolveCache.set(token, promise);
         }
         return promise;
     }
@@ -136,7 +165,7 @@ export default class Injector implements IInjector {
      * Try to return the token for a resolved value.
      */
     public getTokenForValue<T>(value: T): IToken<T> | undefined {
-        return this._instanceTokenMap.get(value);
+        return this._instanceTokenMap.get(value) as IToken<T> | undefined;
     }
 
     /**
@@ -144,6 +173,10 @@ export default class Injector implements IInjector {
      */
     public isInstantiated<T>(token: IToken<T>) {
         return this._tokenInstanceMap.has(token);
+    }
+
+    public getAllInstantiated(): unknown[] {
+        return Array.from(this._tokenInstanceMap.values());
     }
 
     /**
@@ -157,15 +190,16 @@ export default class Injector implements IInjector {
      * Returns the value for the token if it was already resolved, otherwise returns undefined 
      */
     public getIfInstantiated<T>(token: IToken<T>): T | undefined {
-        return this._tokenInstanceMap.get(token);
+        return this._tokenInstanceMap.get(token) as T | undefined;
     }
 
     /** 
      * React-Suspense compatible resolver 
      */
     public getSuspense<T>(token: IToken<T>): T {
-        if (this._tokenInstanceMap.has(token)) {
-            return this._tokenInstanceMap.get(token);
+        const value = this._tokenInstanceMap.get(token) as T | undefined;
+        if (value) {
+            return value;
         } else if (this._tokenErrorMap.has(token)) {
             throw this._tokenErrorMap.get(token);
         }
@@ -191,7 +225,7 @@ export default class Injector implements IInjector {
      * If the tokens is neither bound in this injector or any parent, an UnboundTokenError error will be thrown
      */
     private _get<T>(token: IToken<T>, tokenChain: IToken<any>[] = []): Promise<T> {
-        const provider = this._providers.get(token);
+        const provider = this._providers.get(token) as IProvider<T> | undefined;
         if (provider) {
             return this._provide(token, provider, tokenChain);
         } else if (this._parent) {

@@ -1,4 +1,4 @@
-import { Injector, createToken, bind } from '../src';
+import { Injector, createToken, bind } from '../src/index.ts';
 
 const HelloToken = createToken<string>();
 const WorldToken = createToken<string>();
@@ -15,5 +15,5 @@ test('Injector nesting', async () => {
             [HelloToken, WorldToken],
         ),
     ], parentInjector);
-    expect(childInjector.get(HelloWorldToken)).resolves.toEqual("hello world!");
+    await expect(childInjector.get(HelloWorldToken)).resolves.toEqual("hello world!");
 });

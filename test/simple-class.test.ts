@@ -1,4 +1,4 @@
-import { Injector, createToken, bind } from '../src';
+import { Injector, createToken, bind } from '../src/index.ts';
 
 test('Simple classes with dependencies', async () => {
     class ClassA {
@@ -6,9 +6,10 @@ test('Simple classes with dependencies', async () => {
     }
 
     class ClassB {
-        constructor(
-            public readonly classA: ClassA,
-        ) { }
+        public readonly classA: ClassA;
+        constructor(classA: ClassA) {
+            this.classA = classA;
+        }
     }
     const ClassAToken = createToken<ClassA>('ClassA');
     const ClassBToken = createToken<ClassB>('ClassB');

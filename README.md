@@ -30,6 +30,10 @@ etc.
 Simply install from npm via `tpendency` package with your preferred package
 manager (npm, yarn & co.)
 
+### Agent Skill
+
+You can add [SKILL.md](./skills/tpendency/SKILL.md) to your project to make it easier to use tpendency in your project when working with AI agents.
+
 ## Basic Usage
 
 To start using tpendency, you will have to create a set of tokens with
@@ -111,9 +115,6 @@ bind(PlusTenToken).toFactory((x: number) => x + 10, [StringToken]);
 
 Bindings for classes and factories will also ensure, that the tokens for all
 required parameters are provided correctly.
-
-Because this library uses TypeScript Tuple Types to provide type-safety for
-tokens and bindings, you need at least TypeScript 4.0 to use this library.
 
 ## Best Practices
 

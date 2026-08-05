@@ -11,15 +11,13 @@ export interface DevToolsFormatter<TConfig = any> {
 }
 
 declare global {
-    interface Window {
-        devtoolsFormatters?: DevToolsFormatter[];
-    }
+    var devtoolsFormatters: DevToolsFormatter[] | undefined;
 }
 
 /** Registers a new devtools formatter */
 export function addDevtoolsFormatter(formatter: DevToolsFormatter) {
-    if (typeof window === 'undefined') {
+    if (typeof globalThis === 'undefined') {
         return;
     }
-    (window.devtoolsFormatters || (window.devtoolsFormatters = [])).push(formatter);
+    (globalThis.devtoolsFormatters || (globalThis.devtoolsFormatters = [])).push(formatter);
 }

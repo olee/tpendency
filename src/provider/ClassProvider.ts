@@ -1,5 +1,5 @@
-import type { ClassType, IProvider, TupleToTokens, InjectedTokens } from '../types.js';
-import { ClassDependencyTokensSymbol } from '../types.js';
+import type { ClassType, IProvider, TupleToTokens, InjectedTokens } from '../types.ts';
+import { ClassDependencyTokensSymbol } from '../types.ts';
 
 interface ClassWithOnInjectorCreate { $onInjectorCreate(): void | Promise<unknown>; };
 
@@ -10,12 +10,14 @@ export type ProvidableClass = Partial<ClassWithOnInjectorCreate>;
  */
 export class ClassProvider<T extends {}, TDeps extends readonly any[], CLS extends ClassType<T & ProvidableClass, TDeps>> implements IProvider<T, TDeps> {
 
+	private readonly _class: CLS | CLS & InjectedTokens<TDeps>;
 	private readonly _dependencyTokens: TupleToTokens<TDeps>;
 
 	constructor(
-		private readonly _class: CLS | CLS & InjectedTokens<TDeps>,
+		_class: CLS | CLS & InjectedTokens<TDeps>,
 		dependencyTokens: CLS extends InjectedTokens<TDeps> ? undefined : TupleToTokens<TDeps>
 	) {
+		this._class = _class;
 		if (!_class) {
 			throw new Error(`ClassProvider created with undefined class. Perhaps you have an import order issue`);
 		}

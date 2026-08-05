@@ -1,4 +1,5 @@
-import { Injector, createToken, bind, IBinding } from '../src';
+import { Injector, createToken, bind } from '../src/index.ts';
+import type { IBinding } from '../src/index.ts';
 
 const FortyTwoToken = createToken<42>();
 const HelloToken = createToken<string>();
