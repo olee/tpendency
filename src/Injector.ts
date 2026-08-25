@@ -57,7 +57,7 @@ export default class Injector implements IInjector, AsyncDisposable {
     public async reset(disposeValues: boolean = true) {
         if (disposeValues) {
             for (const value of this.getAllInstantiated()) {
-                if (typeof value === 'object' && value !== null) {
+                if ((typeof value === 'object' || typeof value === 'function') && value !== null) {
                     if (Symbol.asyncDispose in value && typeof value[Symbol.asyncDispose] === 'function') {
                         await (value[Symbol.asyncDispose] as () => Promise<void>)();
                     } else if (Symbol.dispose in value && typeof value[Symbol.dispose] === 'function') {
